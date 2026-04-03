@@ -36,7 +36,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h1 className="font-bold text-base">{CLINIC.name}</h1>
-            <p className="text-xs text-white/70">検査シート作成システム</p>
+            <p className="text-xs text-white/70">カラダマップ</p>
           </div>
         </div>
         <div className="flex items-center gap-3 text-sm">
@@ -160,7 +160,7 @@ export default function Dashboard() {
 
       {/* フッター */}
       <footer className="text-center py-6 text-xs text-gray-400">
-        <p>検査シート作成システム デモ版</p>
+        <p>カラダマップ デモ版</p>
         <a
           href="https://clinic-saas-lp.vercel.app/systems/kensa"
           className="text-[var(--accent)] hover:underline mt-1 inline-block"
