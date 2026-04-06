@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useMemo } from "react";
 import Link from "next/link";
 import { CLINIC, EXAMS } from "@/lib/mock-data";
 
@@ -30,9 +30,70 @@ function diagnosisColor(type: string) {
   return { border: "border-blue-200", bg: "bg-blue-50" };
 }
 
+function getChangeInfo(prevVal: number, currVal: number) {
+  if (prevVal === currVal) return { cls: "unchanged", text: "変化なし", color: "text-gray-400" };
+  if (currVal === 0 && prevVal !== 0) return { cls: "improved", text: "改善", color: "text-green-600" };
+  if (prevVal === 0 && currVal !== 0) return { cls: "worsened", text: "悪化", color: "text-red-600" };
+  if (Math.abs(currVal) < Math.abs(prevVal)) return { cls: "improved", text: "改善", color: "text-green-600" };
+  return { cls: "worsened", text: "悪化", color: "text-red-600" };
+}
+
+function valLabel(val: number) {
+  if (val === -1) return "左が高い";
+  if (val === 1) return "右が高い";
+  return "均等";
+}
+
 export default function ExamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const exam = EXAMS.find((e) => e.id === id);
+
+  const [showComparison, setShowComparison] = useState(false);
+  const [showSelector, setShowSelector] = useState(false);
+  const [beforeIdx, setBeforeIdx] = useState(0);
+  const [afterIdx, setAfterIdx] = useState(0);
+  const [comparisonPair, setComparisonPair] = useState<{ before: typeof EXAMS[0]; after: typeof EXAMS[0] } | null>(null);
+
+  // Same patient's exam history sorted by date (oldest first)
+  const patientHistory = useMemo(() => {
+    if (!exam) return [];
+    return EXAMS.filter((e) => e.patientId === exam.patientId)
+      .sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
+  }, [exam]);
+
+  const canCompare = patientHistory.length >= 2;
+
+  const handleToggleComparison = () => {
+    if (!showComparison) {
+      setShowSelector(true);
+      setShowComparison(true);
+      setComparisonPair(null);
+      setBeforeIdx(0);
+      setAfterIdx(patientHistory.length - 1);
+    } else {
+      setShowComparison(false);
+      setShowSelector(false);
+      setComparisonPair(null);
+    }
+  };
+
+  const handlePreset = (type: "first-latest" | "second-latest" | "prev-current") => {
+    let bIdx = 0;
+    const aIdx = patientHistory.length - 1;
+    if (type === "second-latest" && patientHistory.length >= 3) {
+      bIdx = 1;
+    } else if (type === "prev-current" && patientHistory.length >= 2) {
+      bIdx = patientHistory.length - 2;
+    }
+    setComparisonPair({ before: patientHistory[bIdx], after: patientHistory[aIdx] });
+    setShowSelector(false);
+  };
+
+  const handleCustomCompare = () => {
+    if (beforeIdx === afterIdx) return;
+    setComparisonPair({ before: patientHistory[beforeIdx], after: patientHistory[afterIdx] });
+    setShowSelector(false);
+  };
 
   if (!exam) {
     return (
@@ -228,6 +289,188 @@ export default function ExamDetailPage({ params }: { params: Promise<{ id: strin
             ))}
           </div>
         </div>
+
+        {/* 比較ボタン */}
+        {canCompare && (
+          <button
+            onClick={handleToggleComparison}
+            className={`w-full py-3 rounded-xl font-bold text-sm transition-colors ${
+              showComparison
+                ? "bg-gray-200 text-gray-600"
+                : "bg-purple-600 text-white hover:bg-purple-700"
+            }`}
+          >
+            {showComparison ? "比較を閉じる" : "比較"}
+          </button>
+        )}
+
+        {/* 比較セレクター */}
+        {showComparison && showSelector && (
+          <div className="comparison-selector-card">
+            <h3 className="text-base font-bold text-[var(--accent)] mb-3">比較する検査を選択</h3>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                onClick={() => handlePreset("first-latest")}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] text-white hover:opacity-90 transition"
+              >
+                初回 → 最新
+              </button>
+              {patientHistory.length >= 3 && (
+                <button
+                  onClick={() => handlePreset("second-latest")}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+                >
+                  2回目 → 最新
+                </button>
+              )}
+              <button
+                onClick={() => handlePreset("prev-current")}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+              >
+                前回 → 今回
+              </button>
+            </div>
+            <div className="border-t border-gray-200 pt-3">
+              <p className="text-xs text-gray-500 mb-2">任意の2回を選択：</p>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-bold text-gray-500 mb-1">ビフォー（前）</label>
+                  <select
+                    value={beforeIdx}
+                    onChange={(e) => setBeforeIdx(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white"
+                  >
+                    {patientHistory.map((entry, idx) => (
+                      <option key={entry.id} value={idx}>
+                        {idx + 1}回目 ({entry.examDate})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className="text-gray-400 mt-4">→</span>
+                <div className="flex-1">
+                  <label className="block text-[10px] font-bold text-gray-500 mb-1">アフター（後）</label>
+                  <select
+                    value={afterIdx}
+                    onChange={(e) => setAfterIdx(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs bg-white"
+                  >
+                    {patientHistory.map((entry, idx) => (
+                      <option key={entry.id} value={idx}>
+                        {idx + 1}回目 ({entry.examDate})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <button
+                onClick={handleCustomCompare}
+                disabled={beforeIdx === afterIdx}
+                className="w-full py-2 rounded-xl text-xs font-bold bg-[var(--accent)] text-white hover:opacity-90 transition disabled:opacity-40"
+              >
+                この組み合わせで比較
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 比較結果 */}
+        {showComparison && comparisonPair && (() => {
+          const { before, after } = comparisonPair;
+          const bIdx = patientHistory.indexOf(before) + 1;
+          const aIdx = patientHistory.indexOf(after) + 1;
+          const landmarks = ["mastoid", "scapula", "iliac"] as const;
+          const landmarkNames = { mastoid: "乳様突起", scapula: "肩甲下角", iliac: "腸骨稜" };
+          let improved = 0, worsened = 0, unchanged = 0;
+
+          // Calculate counts
+          for (const pos of ["standing", "seated"] as const) {
+            for (const lm of landmarks) {
+              const prev = before.landmarks[pos][lm];
+              const curr = after.landmarks[pos][lm];
+              const info = getChangeInfo(prev, curr);
+              if (info.cls === "improved") improved++;
+              else if (info.cls === "worsened") worsened++;
+              else unchanged++;
+            }
+          }
+
+          return (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="mb-4">
+                <h3 className="font-bold text-[var(--primary)] text-base">
+                  ビフォーアフター比較（{bIdx}回目 → {aIdx}回目）
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  前: {before.examDate} → 後: {after.examDate}
+                </p>
+                <button
+                  onClick={() => { setShowSelector(true); setComparisonPair(null); }}
+                  className="text-xs text-[var(--accent)] hover:underline mt-1"
+                >
+                  別の組み合わせを選択
+                </button>
+              </div>
+
+              {/* 立位比較 */}
+              <div className="mb-4">
+                <h4 className="text-sm font-bold text-[var(--primary)] mb-2 border-b border-gray-100 pb-1">立位</h4>
+                {landmarks.map((lm) => {
+                  const prev = before.landmarks.standing[lm];
+                  const curr = after.landmarks.standing[lm];
+                  const info = getChangeInfo(prev, curr);
+                  return (
+                    <div key={lm} className="flex items-center justify-between py-2 text-xs border-b border-gray-50">
+                      <span className="text-gray-700 font-medium w-20">{landmarkNames[lm]}</span>
+                      <span className="text-gray-500">{valLabel(prev)}</span>
+                      <span className="text-gray-400">→</span>
+                      <span className="text-gray-700">{valLabel(curr)}</span>
+                      <span className={`font-bold ${info.color}`}>{info.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 座位比較 */}
+              <div className="mb-4">
+                <h4 className="text-sm font-bold text-[var(--primary)] mb-2 border-b border-gray-100 pb-1">座位</h4>
+                {landmarks.map((lm) => {
+                  const prev = before.landmarks.seated[lm];
+                  const curr = after.landmarks.seated[lm];
+                  const info = getChangeInfo(prev, curr);
+                  return (
+                    <div key={lm} className="flex items-center justify-between py-2 text-xs border-b border-gray-50">
+                      <span className="text-gray-700 font-medium w-20">{landmarkNames[lm]}</span>
+                      <span className="text-gray-500">{valLabel(prev)}</span>
+                      <span className="text-gray-400">→</span>
+                      <span className="text-gray-700">{valLabel(curr)}</span>
+                      <span className={`font-bold ${info.color}`}>{info.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* サマリー */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="text-sm font-bold text-[var(--primary)] mb-3">比較サマリー</h4>
+                <div className="flex justify-center gap-6 mb-3">
+                  <span className="text-green-600 font-bold text-base">改善 {improved}</span>
+                  <span className="text-gray-400 font-semibold">変化なし {unchanged}</span>
+                  <span className="text-red-600 font-bold text-base">悪化 {worsened}</span>
+                </div>
+                {/* 原因の変化 */}
+                <div className="text-center text-sm">
+                  <span>原因: {before.diagnosis.label}</span>
+                  <span className="mx-2 text-gray-400">→</span>
+                  <span>{after.diagnosis.label}</span>
+                  {before.diagnosis.label !== after.diagnosis.label && (
+                    <span className="ml-2 text-[var(--primary)] font-semibold">（変化あり）</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* アクションボタン */}
         <div className="flex gap-3">

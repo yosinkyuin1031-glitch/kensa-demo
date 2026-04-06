@@ -564,7 +564,8 @@ export default function NewExamPage() {
             {step < 2 ? (
               <button
                 onClick={() => setStep(step + 1)}
-                className="flex-1 py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90"
+                disabled={step === 0 && !patientName.trim()}
+                className="flex-1 py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ backgroundColor: CLINIC.themeColor }}
               >
                 次へ
