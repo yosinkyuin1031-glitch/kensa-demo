@@ -12,9 +12,9 @@ import {
 } from "@/lib/diagnosis";
 
 const LANDMARK_NAMES = [
-  { key: "mastoid", label: "乳様突起（耳の後ろ）", desc: "側頭骨の突起部分を触診" },
-  { key: "scapula", label: "肩甲下角（肩甲骨の下端）", desc: "肩甲骨の最下端を触診" },
-  { key: "iliac", label: "腸骨稜（骨盤の上端）", desc: "骨盤の最上部を触診" },
+  { key: "mastoid", label: "乳様突起（首の後ろ）", simpleName: "首の後ろ", desc: "側頭骨の突起部分を触診" },
+  { key: "scapula", label: "肩甲下角（肩甲骨の下）", simpleName: "肩甲骨の下", desc: "肩甲骨の最下端を触診" },
+  { key: "iliac", label: "腸骨稜（骨盤の外側）", simpleName: "骨盤の外側", desc: "骨盤の最上部を触診" },
 ];
 
 function LandmarkInput({
@@ -146,9 +146,9 @@ export default function NewExamPage() {
       });
 
       const rows = [
-        { name: "Mastoid", s: standing.mastoid, se: seated.mastoid },
-        { name: "Scapula Inf.", s: standing.scapula, se: seated.scapula },
-        { name: "Iliac Crest", s: standing.iliac, se: seated.iliac },
+        { name: "Mastoid (Behind Neck)", s: standing.mastoid, se: seated.mastoid },
+        { name: "Scapula Inf. (Below Scapula)", s: standing.scapula, se: seated.scapula },
+        { name: "Iliac Crest (Outer Pelvis)", s: standing.iliac, se: seated.iliac },
       ];
       doc.setTextColor(20, 37, 42);
       rows.forEach((row, i) => {
@@ -460,7 +460,7 @@ export default function NewExamPage() {
                 </thead>
                 <tbody>
                   {(["mastoid", "scapula", "iliac"] as const).map((key) => {
-                    const labels = { mastoid: "乳様突起", scapula: "肩甲下角", iliac: "腸骨稜" };
+                    const labels = { mastoid: "乳様突起（首の後ろ）", scapula: "肩甲下角（肩甲骨の下）", iliac: "腸骨稜（骨盤の外側）" };
                     const sv = landmarkDisplay(standing[key]);
                     const se = landmarkDisplay(seated[key]);
                     return (

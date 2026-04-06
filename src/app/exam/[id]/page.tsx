@@ -5,9 +5,9 @@ import Link from "next/link";
 import { CLINIC, EXAMS } from "@/lib/mock-data";
 
 const LANDMARK_LABELS: Record<string, string> = {
-  mastoid: "乳様突起",
-  scapula: "肩甲下角",
-  iliac: "腸骨稜",
+  mastoid: "乳様突起（首の後ろ）",
+  scapula: "肩甲下角（肩甲骨の下）",
+  iliac: "腸骨稜（骨盤の外側）",
 };
 
 function landmarkDisplay(val: number) {
@@ -107,8 +107,10 @@ export default function ExamDetailPage({ params }: { params: Promise<{ id: strin
               <p className="text-xs font-bold text-[var(--primary)]">{exam.diagnosis.treatmentArea}</p>
             </div>
             <div className="bg-white/70 rounded-xl p-3">
-              <p className="text-[10px] text-gray-500 mb-0.5">重心バランス</p>
-              <p className="text-xs font-bold text-[var(--primary)]">{exam.diagnosis.weightBalance}</p>
+              <p className="text-[10px] text-gray-500 mb-0.5">パターン</p>
+              <p className="text-xs font-bold text-[var(--primary)]">
+                {exam.diagnosis.weightBalance === "均等" ? "正常" : exam.diagnosis.weightBalance}
+              </p>
             </div>
           </div>
         </div>
@@ -175,7 +177,7 @@ export default function ExamDetailPage({ params }: { params: Promise<{ id: strin
                 fill={exam.landmarks.standing.mastoid === 0 ? "#4CAF50" : "#FF9800"}
                 opacity="0.8"
               />
-              <text x="165" y="38" fontSize="8" fill="#666">乳様突起</text>
+              <text x="155" y="38" fontSize="8" fill="#666">乳様突起(首の後ろ)</text>
 
               {/* 肩甲下角マーカー */}
               <circle
@@ -185,7 +187,7 @@ export default function ExamDetailPage({ params }: { params: Promise<{ id: strin
                 fill={exam.landmarks.standing.scapula === 0 ? "#4CAF50" : "#FF9800"}
                 opacity="0.8"
               />
-              <text x="165" y="103" fontSize="8" fill="#666">肩甲下角</text>
+              <text x="155" y="103" fontSize="8" fill="#666">肩甲下角(肩甲骨の下)</text>
 
               {/* 腸骨稜マーカー */}
               <circle
@@ -195,7 +197,7 @@ export default function ExamDetailPage({ params }: { params: Promise<{ id: strin
                 fill={exam.landmarks.standing.iliac === 0 ? "#4CAF50" : "#FF9800"}
                 opacity="0.8"
               />
-              <text x="165" y="178" fontSize="8" fill="#666">腸骨稜</text>
+              <text x="155" y="178" fontSize="8" fill="#666">腸骨稜(骨盤の外側)</text>
 
               {/* 凡例 */}
               <circle cx="20" cy="260" r="4" fill="#4CAF50" />

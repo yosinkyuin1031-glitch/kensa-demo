@@ -39,17 +39,18 @@ export const CAUSE_LABELS: Record<
   none: { label: "顕著な歪みなし", icon: "✅", color: "#22c55e" },
 };
 
-function describeLandmark(name: string, val: LandmarkValue): string {
-  if (val === -1) return `${name}: 左が高い`;
-  if (val === 1) return `${name}: 右が高い`;
-  return `${name}: 均等`;
+function describeLandmark(name: string, simpleName: string, val: LandmarkValue): string {
+  const displayName = `${name}（${simpleName}）`;
+  if (val === -1) return `${displayName}: 左が高い`;
+  if (val === 1) return `${displayName}: 右が高い`;
+  return `${displayName}: 均等`;
 }
 
 function describePosition(data: PositionData): string {
   const parts = [
-    describeLandmark("乳様突起", data.mastoid),
-    describeLandmark("肩甲下角", data.scapula),
-    describeLandmark("腸骨稜", data.iliac),
+    describeLandmark("乳様突起", "首の後ろ", data.mastoid),
+    describeLandmark("肩甲下角", "肩甲骨の下", data.scapula),
+    describeLandmark("腸骨稜", "骨盤の外側", data.iliac),
   ];
   return parts.join("、");
 }
@@ -198,6 +199,7 @@ export function getSelfcare(result: DiagnosisResult): string[] {
         "タオルギャザー：床に置いたタオルを足指でたぐり寄せる（10回×3セット）。足底のアーチを活性化します。",
         "カーフレイズ：壁に手をつき、つま先立ち→ゆっくり下ろす（15回×3セット）。下腿の安定性向上。",
         "片脚立ちバランス：目を開けて片脚30秒キープ（左右3回ずつ）。足部の固有感覚を鍛えます。",
+        "足裏アーチケア（ボール・芯踏み）：テニスボールまたはサランラップの芯を床に置き、足裏で土踏まずを中心にゆっくり転がす（各エリア30秒×合計2〜3分）。足裏のアーチを回復させ下半身全体のバランスを改善します。",
       ];
     case "upperBody":
       return [
